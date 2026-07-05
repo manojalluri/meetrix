@@ -132,6 +132,30 @@ export function VideoRoom({ roomId, initialStatus = 'APPROVED', isHost = false }
   const [meetingTranscript, setMeetingTranscript] = useState<{ speaker: string, text: string, time: string }[]>([]);
   const [isSummarizing, setIsSummarizing] = useState(false);
 
+  const recordLeaveTime = async () => {
+    try {
+      await fetch('/api/meetings/leave', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ meetingId: roomId }),
+        keepalive: true
+      });
+    } catch (e) {
+      console.error("Failed to record leave time", e);
+    }
+  };
+
+  useEffect(() => {
+    const handleBeforeUnload = () => recordLeaveTime();
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      if (token && status === 'APPROVED') {
+        recordLeaveTime();
+      }
+    };
+  }, [token, status, roomId]);
+
   // If user hasn't gone through the PreJoin screen yet, show it
   if (!preJoinChoices) {
     if (status === 'REJECTED') {
@@ -205,6 +229,7 @@ export function VideoRoom({ roomId, initialStatus = 'APPROVED', isHost = false }
     );
   }
 
+
   const serverUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
 
   if (!serverUrl) {
@@ -217,29 +242,7 @@ export function VideoRoom({ roomId, initialStatus = 'APPROVED', isHost = false }
     );
   }
 
-  const recordLeaveTime = async () => {
-    try {
-      await fetch('/api/meetings/leave', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ meetingId: roomId }),
-        keepalive: true
-      });
-    } catch (e) {
-      console.error("Failed to record leave time", e);
-    }
-  };
 
-  useEffect(() => {
-    const handleBeforeUnload = () => recordLeaveTime();
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      if (token && status === 'APPROVED') {
-        recordLeaveTime();
-      }
-    };
-  }, [token, status, roomId]);
 
   const handleTranscriptUpdate = (text: string, speaker: string) => {
     setMeetingTranscript(prev => [...prev, {
