@@ -207,6 +207,16 @@ export function VideoRoom({ roomId, initialStatus = 'APPROVED', isHost = false }
 
   const serverUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL;
 
+  if (!serverUrl) {
+    return (
+      <div className="flex flex-col h-screen items-center justify-center bg-black text-white p-6 text-center">
+        <ShieldAlert className="w-12 h-12 text-red-500 mx-auto mb-4" />
+        <h2 className="text-xl font-bold mb-2">Configuration Error</h2>
+        <p className="text-zinc-400">LiveKit Server URL is missing. Please ensure NEXT_PUBLIC_LIVEKIT_URL is set in your environment variables.</p>
+      </div>
+    );
+  }
+
   const recordLeaveTime = async () => {
     try {
       await fetch('/api/meetings/leave', {
