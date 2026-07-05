@@ -66,7 +66,8 @@ export default async function RoomPage({
     }
   }
 
-  const headersList = await import('next/headers').then(m => m.headers());
+  const { headers } = await import('next/headers');
+  const headersList = await headers();
   const userAgent = headersList.get('user-agent') || 'Unknown';
   let browser = 'Unknown';
   let os = 'Unknown';
