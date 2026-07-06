@@ -39,16 +39,36 @@ export async function POST(req: NextRequest) {
       Respond ONLY with valid JSON. Do not include markdown formatting like \`\`\`json.
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-      }
-    });
+    let response;
+    let resultText = "";
+    const modelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-3.5-flash'];
+    let lastError: any = null;
 
-    const resultText = response.text;
-    if (!resultText) throw new Error("No response from AI");
+    for (const modelName of modelsToTry) {
+      try {
+        response = await ai.models.generateContent({
+          model: modelName,
+          contents: prompt,
+          config: {
+            responseMimeType: "application/json",
+          }
+        });
+        if (response.text) {
+          resultText = response.text;
+          break; // Success!
+        }
+      } catch (err: any) {
+        console.warn(`Model ${modelName} failed:`, err.message || err);
+        lastError = err;
+        // Continue to the next model in the fallback list
+      }
+    }
+
+    if (!resultText) {
+      throw new Error(`AI generation failed after trying multiple models. Last error: ${lastError?.message || 'Unknown'}`);
+    }
+
+
 
     const parsedData = JSON.parse(resultText);
 
